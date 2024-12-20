@@ -1,10 +1,14 @@
+const bcrypt = require('bcrypt');
 const Admin = require('../models/adminSchema.js');
-
 
 const adminRegister = async (req, res) => {
     try {
+        const salt = await bcrypt.genSalt(10);
+        const hashedPass = await bcrypt.hash(req.body.password, salt);
+
         const admin = new Admin({
-            ...req.body
+            ...req.body,
+            password: hashedPass
         });
 
         const existingAdminByEmail = await Admin.findOne({ email: req.body.email });
@@ -28,16 +32,21 @@ const adminRegister = async (req, res) => {
 
 const adminLogIn = async (req, res) => {
     if (req.body.email && req.body.password) {
-        let admin = await Admin.findOne({ email: req.body.email });
-        if (admin) {
-            if (req.body.password === admin.password) {
-                admin.password = undefined;
-                res.send(admin);
+        try {
+            let admin = await Admin.findOne({ email: req.body.email });
+            if (admin) {
+                const validated = await bcrypt.compare(req.body.password, admin.password);
+                if (validated) {
+                    admin.password = undefined;
+                    res.send(admin);
+                } else {
+                    res.send({ message: "Invalid password" });
+                }
             } else {
-                res.send({ message: "Invalid password" });
+                res.send({ message: "User not found" });
             }
-        } else {
-            res.send({ message: "User not found" });
+        } catch (err) {
+            res.status(500).json(err);
         }
     } else {
         res.send({ message: "Email and password are required" });
@@ -57,7 +66,7 @@ const getAdminDetail = async (req, res) => {
     } catch (err) {
         res.status(500).json(err);
     }
-}
+};
 
 // const deleteAdmin = async (req, res) => {
 //     try {
