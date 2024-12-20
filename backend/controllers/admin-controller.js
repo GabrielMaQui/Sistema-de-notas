@@ -51,11 +51,8 @@ const adminLogIn = async (req, res) => {
             return res.status(401).send({ message: 'Invalid password' });
         }
 
-        console.log(admin);
         const response = createAuthResponse(admin, { schoolName: admin.schoolName });
-        console.log(admin);
         res.send(response);
-        console.log(admin);
     } catch (err) {
         res.status(500).json({ message: 'Internal Server Error', error: err });
     }

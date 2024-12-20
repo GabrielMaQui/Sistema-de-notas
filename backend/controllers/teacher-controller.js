@@ -1,6 +1,7 @@
 const bcrypt = require('bcrypt');
 const Teacher = require('../models/teacherSchema.js');
 const Subject = require('../models/subjectSchema.js');
+const { createAuthResponse } = require('../middlewares/local.service');
 
 const teacherRegister = async (req, res) => {
     const { name, email, password, role, school, teachSubject, teachSclass } = req.body;
@@ -27,24 +28,37 @@ const teacherRegister = async (req, res) => {
 };
 
 const teacherLogIn = async (req, res) => {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+        return res.status(400).send({ message: 'Email and password are required' });
+    }
+
     try {
-        let teacher = await Teacher.findOne({ email: req.body.email });
-        if (teacher) {
-            const validated = await bcrypt.compare(req.body.password, teacher.password);
-            if (validated) {
-                teacher = await teacher.populate("teachSubject", "subName sessions")
-                teacher = await teacher.populate("school", "schoolName")
-                teacher = await teacher.populate("teachSclass", "sclassName")
-                teacher.password = undefined;
-                res.send(teacher);
-            } else {
-                res.send({ message: "Invalid password" });
-            }
-        } else {
-            res.send({ message: "Teacher not found" });
+        let teacher = await Teacher.findOne({ email });
+
+        if (!teacher) {
+            return res.status(404).send({ message: 'Teacher not found' });
         }
+
+        const validated = await bcrypt.compare(password, teacher.password);
+        if (!validated) {
+            return res.status(401).send({ message: 'Invalid password' });
+        }
+
+        teacher = await teacher.populate("teachSubject", "subName sessions");
+        teacher = await teacher.populate("school", "schoolName");
+        teacher = await teacher.populate("teachSclass", "sclassName");
+
+        const response = createAuthResponse(teacher, {
+            schoolName: teacher.school?.schoolName,
+            subject: teacher.teachSubject?.subName,
+            className: teacher.teachSclass?.sclassName,
+        });
+
+        res.send(response);
     } catch (err) {
-        res.status(500).json(err);
+        res.status(500).json({ message: 'Internal Server Error', error: err });
     }
 };
 

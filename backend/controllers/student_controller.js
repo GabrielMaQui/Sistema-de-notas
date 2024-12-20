@@ -1,6 +1,7 @@
 const bcrypt = require('bcrypt');
 const Student = require('../models/studentSchema.js');
 const Subject = require('../models/subjectSchema.js');
+const { createAuthResponse } = require('../middlewares/local.service');
 
 const studentRegister = async (req, res) => {
     try {
@@ -34,25 +35,35 @@ const studentRegister = async (req, res) => {
 };
 
 const studentLogIn = async (req, res) => {
+    const { rollNum, studentName, password } = req.body;
+
+    if (!rollNum || !studentName || !password) {
+        return res.status(400).send({ message: 'Roll number, student name, and password are required' });
+    }
+
     try {
-        let student = await Student.findOne({ rollNum: req.body.rollNum, name: req.body.studentName });
-        if (student) {
-            const validated = await bcrypt.compare(req.body.password, student.password);
-            if (validated) {
-                student = await student.populate("school", "schoolName")
-                student = await student.populate("sclassName", "sclassName")
-                student.password = undefined;
-                student.examResult = undefined;
-                student.attendance = undefined;
-                res.send(student);
-            } else {
-                res.send({ message: "Invalid password" });
-            }
-        } else {
-            res.send({ message: "Student not found" });
+        let student = await Student.findOne({ rollNum, name: studentName });
+
+        if (!student) {
+            return res.status(404).send({ message: 'Student not found' });
         }
+
+        const validated = await bcrypt.compare(password, student.password);
+        if (!validated) {
+            return res.status(401).send({ message: 'Invalid password' });
+        }
+
+        student = await student.populate("school", "schoolName");
+        student = await student.populate("sclassName", "sclassName");
+
+        const response = createAuthResponse(student, {
+            schoolName: student.school?.schoolName,
+            className: student.sclassName?.sclassName,
+        });
+
+        res.send(response);
     } catch (err) {
-        res.status(500).json(err);
+        res.status(500).json({ message: 'Internal Server Error', error: err });
     }
 };
 

@@ -1,6 +1,6 @@
 const { compose } = require('compose-middleware');
 const { verifyToken } = require('./auth.service');
-const { getOneUserEmail } = require('../utils//user.service');
+const { getOneUserByIdentifier } = require('../utils//user.service');
 
 function isAuthenticated() {
   return compose([
@@ -17,7 +17,7 @@ function isAuthenticated() {
         return res.status(401).json({ message: 'Unauthorized' });
       }
 
-      const user = await getOneUserEmail(decoded.email);
+      const user = await getOneUserByIdentifier(decoded.email);
 
       if (!user) {
         return res.status(401).json({ message: 'Unauthorized' });
