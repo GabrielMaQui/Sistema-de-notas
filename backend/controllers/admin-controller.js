@@ -1,7 +1,9 @@
 const bcrypt = require('bcrypt');
 const Admin = require('../models/adminSchema.js');
+const { createAuthResponse } = require('../middlewares/local.service');
 
 const adminRegister = async (req, res) => {
+
     try {
         const salt = await bcrypt.genSalt(10);
         const hashedPass = await bcrypt.hash(req.body.password, salt);
@@ -31,25 +33,31 @@ const adminRegister = async (req, res) => {
 };
 
 const adminLogIn = async (req, res) => {
-    if (req.body.email && req.body.password) {
-        try {
-            let admin = await Admin.findOne({ email: req.body.email });
-            if (admin) {
-                const validated = await bcrypt.compare(req.body.password, admin.password);
-                if (validated) {
-                    admin.password = undefined;
-                    res.send(admin);
-                } else {
-                    res.send({ message: "Invalid password" });
-                }
-            } else {
-                res.send({ message: "User not found" });
-            }
-        } catch (err) {
-            res.status(500).json(err);
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+        return res.status(400).send({ message: 'Email and password are required' });
+    }
+
+    try {
+        const admin = await Admin.findOne({ email });
+
+        if (!admin) {
+            return res.status(404).send({ message: 'Admin not found' });
         }
-    } else {
-        res.send({ message: "Email and password are required" });
+
+        const isValidPassword = await bcrypt.compare(password, admin.password);
+        if (!isValidPassword) {
+            return res.status(401).send({ message: 'Invalid password' });
+        }
+
+        console.log(admin);
+        const response = createAuthResponse(admin, { schoolName: admin.schoolName });
+        console.log(admin);
+        res.send(response);
+        console.log(admin);
+    } catch (err) {
+        res.status(500).json({ message: 'Internal Server Error', error: err });
     }
 };
 
