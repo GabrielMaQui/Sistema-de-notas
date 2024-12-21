@@ -11,11 +11,13 @@ const studentRegister = async (req, res) => {
         const salt = await bcrypt.genSalt(10);
         const hashedPass = await bcrypt.hash(req.body.password, salt);
 
+        console.log(req.body);
         const existingStudent = await Student.findOne({
             rollNum: req.body.rollNum,
             school: req.body.adminID,
             sclassName: req.body.sclassName,
         });
+
 
         if (existingStudent) {
             res.send({ message: 'Roll Number already exists' });
@@ -33,6 +35,7 @@ const studentRegister = async (req, res) => {
             res.send(result);
         }
     } catch (err) {
+        console.error("Error during query:", err);
         res.status(500).json(err);
     }
 };
@@ -53,7 +56,6 @@ const studentLogIn = async (req, res) => {
 
     // Validar el token de reCAPTCHA con Google
     try {
-
 
         const recaptchaResponse = await axios.post(
             'https://www.google.com/recaptcha/api/siteverify',

@@ -41,7 +41,7 @@ router.get('/Admin/:id', isAuthenticated(), getAdminDetail);
 // Student
 
 router.post('/StudentReg',  studentRegister);
-router.post('/StudentLogin',  studentLogIn)
+router.post('/StudentLogin', studentLogIn)
 
 router.get("/Students/:id",  isAuthenticated(), getStudents)
 router.get("/Student/:id", isAuthenticated(), getStudentDetail)

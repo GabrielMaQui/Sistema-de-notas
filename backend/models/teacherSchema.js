@@ -1,14 +1,19 @@
 const mongoose = require("mongoose")
+const { encrypt, decrypt } = require('../utils/cryptoUtils');
 
 const teacherSchema = new mongoose.Schema({
     name: {
         type: String,
         required: true,
+        set: encrypt,
+        get: decrypt,
     },
     email: {
         type: String,
         unique: true,
         required: true,
+        set: encrypt,
+        get: decrypt,
     },
     password: {
         type: String,
@@ -44,6 +49,6 @@ const teacherSchema = new mongoose.Schema({
             type: String,
         }
     }]
-}, { timestamps: true });
+}, { toJSON: { getters: true }, toObject: { getters: true } });
 
 module.exports = mongoose.model("teacher", teacherSchema)
