@@ -1,6 +1,9 @@
 const bcrypt = require('bcrypt');
 const Admin = require('../models/adminSchema.js');
 const { createAuthResponse } = require('../middlewares/local.service');
+const axios = require('axios');
+
+let failedAttempts = {};
 
 const adminRegister = async (req, res) => {
 
@@ -33,10 +36,40 @@ const adminRegister = async (req, res) => {
 };
 
 const adminLogIn = async (req, res) => {
-    const { email, password } = req.body;
+    const { email, password, recaptchaToken } = req.body;
 
-    if (!email || !password) {
-        return res.status(400).send({ message: 'Email and password are required' });
+    // Validar campos requeridos
+    if (!email || !password || !recaptchaToken) {
+        return res.status(400).send({ message: 'Todos los campos son obligatorios, incluyendo el token de reCAPTCHA.' });
+    }
+
+    // Validar si la cuenta está bloqueada
+    if (failedAttempts[email] && failedAttempts[email].isLocked) {
+        const timeLeft = (failedAttempts[email].lockUntil - Date.now()) / 1000;
+        return res.status(403).json({ message: `Cuenta bloqueada. Intenta de nuevo en ${Math.ceil(timeLeft)} segundos.` });
+    }
+
+
+     try {
+        const recaptchaResponse = await axios.post(
+            'https://www.google.com/recaptcha/api/siteverify',
+            null,
+            {
+                params: {
+                    secret: process.env.SECRET_KEY,
+                    response: recaptchaToken,
+                },
+            }
+        );
+
+        const { success, score } = recaptchaResponse.data;
+
+
+        if (!success || score < 0.5) {
+            return res.status(400).json({ message: 'reCAPTCHA no válido. Por favor, inténtalo de nuevo.' });
+        }
+    } catch (error) {
+        return res.status(500).json({ message: 'Error al validar el token de reCAPTCHA.', error: error.message });
     }
 
     try {
@@ -48,7 +81,19 @@ const adminLogIn = async (req, res) => {
 
         const isValidPassword = await bcrypt.compare(password, admin.password);
         if (!isValidPassword) {
+            failedAttempts[email] = failedAttempts[email] || { count: 0, lockUntil: 0 };
+            failedAttempts[email].count++;
+
+            if (failedAttempts[email].count >= 3) {
+                failedAttempts[email].isLocked = true;
+                failedAttempts[email].lockUntil = Date.now() + 10 * 60 * 1000; // Bloquear por 10 minutos
+            }
             return res.status(401).send({ message: 'Invalid password' });
+        }
+
+        // Restablecer intentos fallidos en caso de éxito
+        if (failedAttempts[email]) {
+            delete failedAttempts[email];
         }
 
         const response = createAuthResponse(admin, { schoolName: admin.schoolName });

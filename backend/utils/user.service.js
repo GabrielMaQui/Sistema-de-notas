@@ -4,8 +4,7 @@ const Teacher = require('../models/teacherSchema');
 
 async function getOneUserByIdentifier(identifier) {
   try {
-    console.log(identifier);
-
+    
     // Verifica si el identificador es un número
     if (!isNaN(identifier)) {
       const user = await Student.findOne({ rollNum: identifier });

@@ -2,6 +2,9 @@ const bcrypt = require('bcrypt');
 const Student = require('../models/studentSchema.js');
 const Subject = require('../models/subjectSchema.js');
 const { createAuthResponse } = require('../middlewares/local.service');
+const axios = require('axios');
+
+let failedAttempts = {};
 
 const studentRegister = async (req, res) => {
     try {
@@ -35,35 +38,81 @@ const studentRegister = async (req, res) => {
 };
 
 const studentLogIn = async (req, res) => {
-    const { rollNum, studentName, password } = req.body;
+    const { rollNum, studentName, password, recaptchaToken } = req.body;
 
-    if (!rollNum || !studentName || !password) {
-        return res.status(400).send({ message: 'Roll number, student name, and password are required' });
+    // Validar campos requeridos
+    if (!rollNum || !studentName || !password || !recaptchaToken) {
+        return res.status(400).send({ message: 'Todos los campos son obligatorios, incluyendo el token de reCAPTCHA.' });
     }
 
+    // Validar si la cuenta está bloqueada
+    if (failedAttempts[rollNum] && failedAttempts[rollNum].isLocked) {
+        const timeLeft = (failedAttempts[rollNum].lockUntil - Date.now()) / 1000;
+        return res.status(403).json({ message: `Cuenta bloqueada. Intenta de nuevo en ${Math.ceil(timeLeft)} segundos.` });
+    }
+
+    // Validar el token de reCAPTCHA con Google
+    try {
+
+
+        const recaptchaResponse = await axios.post(
+            'https://www.google.com/recaptcha/api/siteverify',
+            null,
+            {
+                params: {
+                    secret: process.env.SECRET_KEY,
+                    response: recaptchaToken,
+                },
+            }
+        );
+
+
+        const { success, score } = recaptchaResponse.data;
+
+        // Comprobar si la validación de reCAPTCHA fue exitosa
+        if (!success || score < 0.5) {
+            return res.status(400).json({ message: 'reCAPTCHA no válido. Por favor, inténtalo de nuevo.' });
+        }
+    } catch (error) {
+        return res.status(500).json({ message: 'Error al validar el token de reCAPTCHA.', error: error.message });
+    }
+
+    // Continuar con la lógica de inicio de sesión
     try {
         let student = await Student.findOne({ rollNum, name: studentName });
 
         if (!student) {
-            return res.status(404).send({ message: 'Student not found' });
+            return res.status(404).send({ message: 'Estudiante no encontrado.' });
         }
 
         const validated = await bcrypt.compare(password, student.password);
         if (!validated) {
-            return res.status(401).send({ message: 'Invalid password' });
+            failedAttempts[rollNum] = failedAttempts[rollNum] || { count: 0, lockUntil: 0 };
+            failedAttempts[rollNum].count++;
+
+            if (failedAttempts[rollNum].count >= 3) {
+                failedAttempts[rollNum].isLocked = true;
+                failedAttempts[rollNum].lockUntil = Date.now() + 10 * 60 * 1000;
+            }
+            return res.status(401).send({ message: 'Contraseña incorrecta.' });
         }
 
         student = await student.populate("school", "schoolName");
         student = await student.populate("sclassName", "sclassName");
+
+        // Restablecer intentos fallidos en caso de éxito
+        if (failedAttempts[rollNum]) {
+            delete failedAttempts[rollNum];
+        }
 
         const response = createAuthResponse(student, {
             schoolName: student.school?.schoolName,
             className: student.sclassName?.sclassName,
         });
 
-        res.send({response, user: student});
+        res.send({ response, user: student });
     } catch (err) {
-        res.status(500).json({ message: 'Internal Server Error', error: err });
+        res.status(500).json({ message: 'Error interno del servidor.', error: err.message });
     }
 };
 

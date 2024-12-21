@@ -1,5 +1,6 @@
 const router = require('express').Router();
 
+
 // const { adminRegister, adminLogIn, deleteAdmin, getAdminDetail, updateAdmin } = require('../controllers/admin-controller.js');
 const { isAuthenticated, hasRole } = require('../middlewares/auth.middleware');
 const { adminRegister, adminLogIn, getAdminDetail} = require('../controllers/admin-controller.js');
@@ -25,6 +26,9 @@ const {
 const { subjectCreate, classSubjects, deleteSubjectsByClass, getSubjectDetail, deleteSubject, freeSubjectList, allSubjects, deleteSubjects } = require('../controllers/subject-controller.js');
 const { teacherRegister, teacherLogIn, getTeachers, getTeacherDetail, deleteTeachers, deleteTeachersByClass, deleteTeacher, updateTeacherSubject, teacherAttendance } = require('../controllers/teacher-controller.js');
 
+
+
+
 // Admin
 router.post('/AdminReg', adminRegister);
 router.post('/AdminLogin', adminLogIn);
@@ -36,8 +40,8 @@ router.get('/Admin/:id', isAuthenticated(), getAdminDetail);
 
 // Student
 
-router.post('/StudentReg', studentRegister);
-router.post('/StudentLogin', studentLogIn)
+router.post('/StudentReg',  studentRegister);
+router.post('/StudentLogin',  studentLogIn)
 
 router.get("/Students/:id",  isAuthenticated(), getStudents)
 router.get("/Student/:id", isAuthenticated(), getStudentDetail)

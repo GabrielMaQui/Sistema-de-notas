@@ -1,7 +1,10 @@
+const axios = require('axios');
 const bcrypt = require('bcrypt');
 const Teacher = require('../models/teacherSchema.js');
 const Subject = require('../models/subjectSchema.js');
 const { createAuthResponse } = require('../middlewares/local.service');
+
+let failedAttempts = {};
 
 const teacherRegister = async (req, res) => {
     const { name, email, password, role, school, teachSubject, teachSclass } = req.body;
@@ -28,10 +31,40 @@ const teacherRegister = async (req, res) => {
 };
 
 const teacherLogIn = async (req, res) => {
-    const { email, password } = req.body;
+    const { email, password, recaptchaToken } = req.body;
 
-    if (!email || !password) {
-        return res.status(400).send({ message: 'Email and password are required' });
+    // Validar campos requeridos
+    if (!email || !password || !recaptchaToken) {
+        return res.status(400).send({ message: 'Todos los campos son obligatorios, incluyendo el token de reCAPTCHA.' });
+    }
+
+    // Validar si la cuenta está bloqueada
+    if (failedAttempts[email] && failedAttempts[email].isLocked) {
+        const timeLeft = (failedAttempts[email].lockUntil - Date.now()) / 1000;
+        return res.status(403).json({ message: `Cuenta bloqueada. Intenta de nuevo en ${Math.ceil(timeLeft)} segundos.` });
+    }
+
+    // Validar el token de reCAPTCHA con Google
+    try {
+        const recaptchaResponse = await axios.post(
+            'https://www.google.com/recaptcha/api/siteverify',
+            null,
+            {
+                params: {
+                    secret: process.env.SECRET_KEY,
+                    response: recaptchaToken,
+                },
+            }
+        );
+
+        const { success, score } = recaptchaResponse.data;
+
+        // Comprobar si la validación de reCAPTCHA fue exitosa
+        if (!success || score < 0.5) {
+            return res.status(400).json({ message: 'reCAPTCHA no válido. Por favor, inténtalo de nuevo.' });
+        }
+    } catch (error) {
+        return res.status(500).json({ message: 'Error al validar el token de reCAPTCHA.', error: error.message });
     }
 
     try {
@@ -43,12 +76,24 @@ const teacherLogIn = async (req, res) => {
 
         const validated = await bcrypt.compare(password, teacher.password);
         if (!validated) {
+            failedAttempts[email] = failedAttempts[email] || { count: 0, lockUntil: 0 };
+            failedAttempts[email].count++;
+
+            if (failedAttempts[email].count >= 3) {
+                failedAttempts[email].isLocked = true;
+                failedAttempts[email].lockUntil = Date.now() + 10 * 60 * 1000;
+            }
             return res.status(401).send({ message: 'Invalid password' });
         }
 
         teacher = await teacher.populate("teachSubject", "subName sessions");
         teacher = await teacher.populate("school", "schoolName");
         teacher = await teacher.populate("teachSclass", "sclassName");
+
+        // Restablecer intentos fallidos en caso de éxito
+        if (failedAttempts[email]) {
+            delete failedAttempts[email];
+        }
 
         const response = createAuthResponse(teacher, {
             schoolName: teacher.school?.schoolName,

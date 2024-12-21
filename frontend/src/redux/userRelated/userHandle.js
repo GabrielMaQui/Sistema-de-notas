@@ -13,16 +13,19 @@ import {
     getError,
 } from './userSlice';
 
-// Helper to get the token from localStorage
+
 const getAuthToken = () => localStorage.getItem('token');
-
 // Login User
-export const loginUser = (fields, role) => async (dispatch) => {
+export const loginUser = (fields, role, recaptchaToken) => async (dispatch) => {
     dispatch(authRequest());
-
     try {
+        // Combine the fields with the recaptchaToken
+        const payload = {
+            ...fields,
+            recaptchaToken, // Add the reCAPTCHA token to the payload
+        };
 
-        const result = await axios.post(`${process.env.REACT_APP_BASE_URL}/${role}Login`, fields, {
+        const result = await axios.post(`${process.env.REACT_APP_BASE_URL}/${role}Login`, payload, {
             headers: { 'Content-Type': 'application/json' },
         });
 
@@ -34,7 +37,8 @@ export const loginUser = (fields, role) => async (dispatch) => {
             dispatch(authFailed(result.data.message));
         }
     } catch (error) {
-        dispatch(authError(error));
+        const errorMessage = error.response?.data?.message || 'An error occurred';
+        dispatch(authError({message: errorMessage }));
     }
 };
 
