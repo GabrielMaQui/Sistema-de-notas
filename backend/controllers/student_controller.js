@@ -61,7 +61,7 @@ const studentLogIn = async (req, res) => {
             className: student.sclassName?.sclassName,
         });
 
-        res.send(response);
+        res.send({response, user: student});
     } catch (err) {
         res.status(500).json({ message: 'Internal Server Error', error: err });
     }

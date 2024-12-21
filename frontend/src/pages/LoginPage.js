@@ -31,6 +31,7 @@ const LoginPage = ({ role }) => {
     const [studentNameError, setStudentNameError] = useState(false);
 
     const handleSubmit = (event) => {
+
         event.preventDefault();
 
         if (role === "Student") {
@@ -99,6 +100,8 @@ const LoginPage = ({ role }) => {
 
     useEffect(() => {
         if (status === 'success' || currentUser !== null) {
+
+
             if (currentRole === 'Admin') {
                 navigate('/Admin/dashboard');
             }

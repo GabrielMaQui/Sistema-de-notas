@@ -24,7 +24,6 @@ function isAuthenticated() {
       }
 
       req.user = user;
-
       next();
     },
   ]);
@@ -34,9 +33,11 @@ function hasRole(allowRoles) {
   return compose([
     isAuthenticated(),
     (req, res, next) => {
-      const { role } = req.user;
 
-      if (!allowRoles.includes(role)) {
+      const { userType } = req.user;
+
+
+      if (!allowRoles.includes(userType)) {
         return res.status(403).json({ message: 'Forbidden' });
       }
 

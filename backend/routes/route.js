@@ -42,57 +42,57 @@ router.post('/StudentLogin', studentLogIn)
 router.get("/Students/:id",  isAuthenticated(), getStudents)
 router.get("/Student/:id", isAuthenticated(), getStudentDetail)
 
-router.delete("/Students/:id",hasRole(['admin']), deleteStudents)
-router.delete("/StudentsClass/:id", hasRole(['admin']),  deleteStudentsByClass)
-router.delete("/Student/:id",  hasRole(['admin']), deleteStudent)
+router.delete("/Students/:id",hasRole(['Admin']), deleteStudents)
+router.delete("/StudentsClass/:id", hasRole(['Admin']),  deleteStudentsByClass)
+router.delete("/Student/:id",  hasRole(['Admin']), deleteStudent)
 
-router.put("/Student/:id", hasRole(['admin', 'teacher']), updateStudent)
+router.put("/Student/:id", hasRole(['Admin', 'Teacher']), updateStudent)
 
-router.put('/UpdateExamResult/:id', hasRole(['admin', 'teacher']), updateExamResult);
-router.put('/StudentAttendance/:id', hasRole(['teacher']), studentAttendance);
-router.put('/RemoveAllStudentsSubAtten/:id', hasRole(['admin']), clearAllStudentsAttendanceBySubject);
-router.put('/RemoveAllStudentsAtten/:id', hasRole(['admin']), clearAllStudentsAttendance);
-router.put('/RemoveStudentSubAtten/:id', hasRole(['admin']), removeStudentAttendanceBySubject);
-router.put('/RemoveStudentAtten/:id', hasRole(['admin']), removeStudentAttendance);
+router.put('/UpdateExamResult/:id', hasRole(['Admin', 'Teacher']), updateExamResult);
+router.put('/StudentAttendance/:id', hasRole(['Teacher']), studentAttendance);
+router.put('/RemoveAllStudentsSubAtten/:id', hasRole(['Admin']), clearAllStudentsAttendanceBySubject);
+router.put('/RemoveAllStudentsAtten/:id', hasRole(['Admin']), clearAllStudentsAttendance);
+router.put('/RemoveStudentSubAtten/:id', hasRole(['Admin']), removeStudentAttendanceBySubject);
+router.put('/RemoveStudentAtten/:id', hasRole(['Admin']), removeStudentAttendance);
 
 // Teacher
 router.post('/TeacherReg', teacherRegister);
 router.post('/TeacherLogin', teacherLogIn);
 router.get('/Teachers/:id', isAuthenticated(), getTeachers);
 router.get('/Teacher/:id', isAuthenticated(), getTeacherDetail);
-router.delete('/Teachers/:id', hasRole(['admin']), deleteTeachers);
-router.delete('/TeachersClass/:id', hasRole(['admin']), deleteTeachersByClass);
-router.delete('/Teacher/:id', hasRole(['admin']), deleteTeacher);
-router.put('/TeacherSubject', hasRole(['admin']), updateTeacherSubject);
-router.post('/TeacherAttendance/:id', hasRole(['teacher']), teacherAttendance);
+router.delete('/Teachers/:id', hasRole(['Admin']), deleteTeachers);
+router.delete('/TeachersClass/:id', hasRole(['Admin']), deleteTeachersByClass);
+router.delete('/Teacher/:id', hasRole(['Admin']), deleteTeacher);
+router.put('/TeacherSubject', hasRole(['Admin']), updateTeacherSubject);
+router.post('/TeacherAttendance/:id', hasRole(['Teacher']), teacherAttendance);
 
 // Notice
-router.post('/NoticeCreate', hasRole(['admin']), noticeCreate);
+router.post('/NoticeCreate', hasRole(['Admin']), noticeCreate);
 router.get('/NoticeList/:id', isAuthenticated(), noticeList);
-router.delete('/Notices/:id', hasRole(['admin']), deleteNotices);
-router.delete('/Notice/:id', hasRole(['admin']), deleteNotice);
-router.put('/Notice/:id', hasRole(['admin']), updateNotice);
+router.delete('/Notices/:id', hasRole(['Admin']), deleteNotices);
+router.delete('/Notice/:id', hasRole(['Admin']), deleteNotice);
+router.put('/Notice/:id', hasRole(['Admin']), updateNotice);
 
 // Complain
 router.post('/ComplainCreate', isAuthenticated(), complainCreate);
 router.get('/ComplainList/:id', isAuthenticated(), complainList);
 
 // Sclass
-router.post('/SclassCreate', hasRole(['admin']), sclassCreate);
+router.post('/SclassCreate', hasRole(['Admin']), sclassCreate);
 router.get('/SclassList/:id', isAuthenticated(), sclassList);
 router.get('/Sclass/:id', isAuthenticated(), getSclassDetail);
 router.get('/Sclass/Students/:id', isAuthenticated(), getSclassStudents);
-router.delete('/Sclasses/:id', hasRole(['admin']), deleteSclasses);
-router.delete('/Sclass/:id', hasRole(['admin']), deleteSclass);
+router.delete('/Sclasses/:id', hasRole(['Admin']), deleteSclasses);
+router.delete('/Sclass/:id', hasRole(['Admin']), deleteSclass);
 
 // Subject
-router.post('/SubjectCreate', hasRole(['admin']), subjectCreate);
+router.post('/SubjectCreate', hasRole(['Admin']), subjectCreate);
 router.get('/AllSubjects/:id', isAuthenticated(), allSubjects);
 router.get('/ClassSubjects/:id', isAuthenticated(), classSubjects);
 router.get('/FreeSubjectList/:id', isAuthenticated(), freeSubjectList);
 router.get('/Subject/:id', isAuthenticated(), getSubjectDetail);
-router.delete('/Subject/:id', hasRole(['admin']), deleteSubject);
-router.delete('/Subjects/:id', hasRole(['admin']), deleteSubjects);
-router.delete('/SubjectsClass/:id', hasRole(['admin']), deleteSubjectsByClass);
+router.delete('/Subject/:id', hasRole(['Admin']), deleteSubject);
+router.delete('/Subjects/:id', hasRole(['Admin']), deleteSubjects);
+router.delete('/SubjectsClass/:id', hasRole(['Admin']), deleteSubjectsByClass);
 
 module.exports = router;

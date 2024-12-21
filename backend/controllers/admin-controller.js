@@ -52,7 +52,7 @@ const adminLogIn = async (req, res) => {
         }
 
         const response = createAuthResponse(admin, { schoolName: admin.schoolName });
-        res.send(response);
+        res.send({response, user: admin});
     } catch (err) {
         res.status(500).json({ message: 'Internal Server Error', error: err });
     }
