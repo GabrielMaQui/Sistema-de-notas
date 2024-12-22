@@ -38,8 +38,22 @@ const teacherLogIn = async (req, res) => {
         return res.status(400).send({ message: 'Todos los campos son obligatorios, incluyendo el token de reCAPTCHA.' });
     }
 
-    // Validar si la cuenta está bloqueada
-    if (failedAttempts[email] && failedAttempts[email].isLocked) {
+    if (failedAttempts[email]) {
+        const { isLocked, lockUntil } = failedAttempts[email];
+
+        if (isLocked) {
+            if (Date.now() >= lockUntil) {
+                // Tiempo de bloqueo expirado, restablecer estado
+                delete failedAttempts[email];
+            } else {
+                const timeLeft = (lockUntil - Date.now()) / 1000;
+                return res.status(403).json({ message: `Cuenta bloqueada. Intenta de nuevo en ${Math.ceil(timeLeft)} segundos.` });
+            }
+        }
+    }
+
+     // Validar si la cuenta está bloqueada
+     if (failedAttempts[email] && failedAttempts[email].isLocked) {
         const timeLeft = (failedAttempts[email].lockUntil - Date.now()) / 1000;
         return res.status(403).json({ message: `Cuenta bloqueada. Intenta de nuevo en ${Math.ceil(timeLeft)} segundos.` });
     }
